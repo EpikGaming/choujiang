@@ -28,7 +28,7 @@ def get_pr_1(main_list: list, get_gift_list, num_of_gift_people):
 
 
 # 第二种：随机抽取
-def function_random(people: list):
+def function_random(people):
     random.seed(time.time())
     return random.choice(people)
 
@@ -53,7 +53,6 @@ def function_adjustable(listA: list, name: str):
             pr_dict[listA[i]] = other_pr
             remain_pr -= other_pr
     pr_dict[listA[safufu_index]] += remain_pr      # 概率补全
-    print(pr_dict)
 
 
     # 先构造概率数组

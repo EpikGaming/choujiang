@@ -12,10 +12,13 @@ from collections import deque
 
 class App:
     def __init__(self):
+        self.STATE1 = "：正在送出礼物"
+        self.STATE2 = "（已获得）"
         self.root = Tk()
         self.running_flag = False   # 设置滚动 flag
         self.time_span = 0.03       # 名称显示间隔
         self.qunyou_list, self.tianxuan_count, self.last_year_safufu = self.get_people_list()   # 拿到群友名单
+        self.qunyou_temp = self.qunyou_list + [" "]
         self.gift_count = len(self.qunyou_list) + self.tianxuan_count + 1
         self.gift_remain = self.gift_count
         self.qunyou_gift_remain = len(self.qunyou_list)
@@ -23,9 +26,14 @@ class App:
         self.safufu_gift_remain = 1
         self.result_message_list = [""] * self.gift_count               # 这是结果消息显示列表
         self.result_gift_index = 0                                      # 这是结果消息显示的 index
+        self.ready_message_dict = dict()
+        for qunyou in self.qunyou_temp:
+            self.ready_message_dict[qunyou] = [""]
         self.ready_message_list = [""] * (len(self.qunyou_list) + 1)    # 这是准备消息显示列表
         self.get_ready_gift_index = 0                                   # 这是准备抽取礼物的 index
         self.get_gift_list = collections.deque()                        # 这是一个临时数组，存储已获得礼物的人 + 正在抽取礼物的人
+        self.ready_message_dict[self.qunyou_temp[self.get_ready_gift_index]].insert(0, self.STATE1)
+        self.get_gift_list.appendleft(self.qunyou_list[self.get_ready_gift_index])
         self.root.title("致远星联络中心专用抽奖 v1.0")
         width = 600
         height = 550
@@ -53,36 +61,33 @@ class App:
             pass
         else:
             extra_gift = 1
-        # temp = ""
-        # for qunyou in res:
-        #     temp += str(qunyou) + '\n'
-        # self.remain_message_var.set(temp)
         return res, extra_gift, str(safufu)
 
-    def get_pr(self, qunyou: list, without: str, is_avg: bool):
-        pr_result = []
-        n = len(qunyou)
-        # 抽 天选之人 的概率获取
-        if is_avg:
-            pr = (Decimal('1.0000') / Decimal(n)).quantize(Decimal('.0001'))
-            remain_pr = Decimal('1.0000')  # 概率修正
-            for i in range(n):
-                pr_result.append(pr)
-                remain_pr -= pr
-            pr_result.append(remain_pr)
-        # 礼物交换 和 Safufu 的概率获取
-        else:
-            without_index = qunyou.index(without)
-            pr = (Decimal('1.0000') / Decimal(n - 1)).quantize(Decimal('.0001'))
-            remain_pr = Decimal('1.0000')   # 概率修正
-            for i in range(n):
-                if i == without_index:
-                    pr_result.append(Decimal('0.0000'))
-                else:
-                    pr_result.append(pr)
-                    remain_pr -= pr
-            pr_result.append(remain_pr)
-        return pr_result
+    # 删除了概率显示功能
+    # def get_pr(self, qunyou: list, without: str, is_avg: bool):
+    #     pr_result = []
+    #     n = len(qunyou)
+    #     # 抽 天选之人 的概率获取
+    #     if is_avg:
+    #         pr = (Decimal('1.0000') / Decimal(n)).quantize(Decimal('.0001'))
+    #         remain_pr = Decimal('1.0000')  # 概率修正
+    #         for i in range(n):
+    #             pr_result.append(pr)
+    #             remain_pr -= pr
+    #         pr_result.append(remain_pr)
+    #     # 礼物交换 和 Safufu 的概率获取
+    #     else:
+    #         without_index = qunyou.index(without)
+    #         pr = (Decimal('1.0000') / Decimal(n - 1)).quantize(Decimal('.0001'))
+    #         remain_pr = Decimal('1.0000')   # 概率修正
+    #         for i in range(n):
+    #             if i == without_index:
+    #                 pr_result.append(Decimal('0.0000'))
+    #             else:
+    #                 pr_result.append(pr)
+    #                 remain_pr -= pr
+    #         pr_result.append(remain_pr)
+    #     return pr_result
 
     def create_widget(self):
         # 名字显示组件 —— Label
@@ -242,23 +247,23 @@ class App:
     # 这里只做 正在抽取谁的礼物 + 谁抽到了礼物的展示
     def get_ready_message(self):
         # 在这里拿概率数组
-        temp = self.qunyou_list[:]
+        # temp = self.qunyou_list[:]
         if self.draw_type_button_var.get() == 1:
             if self.get_ready_gift_index == len(self.qunyou_list):
                 return "\n".join(self.qunyou_list + ["Finished."])
-            gift_people = self.qunyou_list[self.get_ready_gift_index]
-            self.get_gift_list.appendleft(gift_people)
-            get_gift_list = self.get_gift_list
-            length = len(set(self.get_gift_list))
-            pr = get_pr(temp, get_gift_list, length)
-            self.remain_pr_label_var.set("概率修正：%.4f" % pr['remain'])
-            temp[self.get_ready_gift_index] = gift_people + '\'s gift is ready to random.'
+            # gift_people = self.qunyou_list[self.get_ready_gift_index]
+            # self.get_gift_list.appendleft(gift_people)
+            # get_gift_list = self.get_gift_list
+            # length = len(set(self.get_gift_list))
+            # pr = get_pr(temp, get_gift_list, length)
+            # self.remain_pr_label_var.set("概率修正：%.4f" % pr['remain'])
+            # temp[self.get_ready_gift_index] = gift_people + '\'s gift is ready to random.'
             # for i in range(len(temp)):
             #     if i == self.get_ready_gift_index:
             #         continue
             #     else:
             #         temp[i] = "{:^4s} ：{:5.2f}%".format(temp[i], pr[temp[i]] * 100)
-            return "\n".join(temp)
+            return "\n".join(i + "".join(j) for i, j in self.ready_message_dict.items())
         else:
             return "\n".join(self.qunyou_list)
 
@@ -270,7 +275,11 @@ class App:
             return
 
         if mode == 'o2o':
-            temp = self.qunyou_list * 20
+            temp = self.qunyou_list * 15
+            result = set(self.qunyou_list)
+            result.difference_update(self.get_gift_list)
+            # print(result)
+            # print(self.get_gift_list)
             while True:
                 if self.running_flag:
                     random_choice = function_random(temp)
@@ -278,20 +287,31 @@ class App:
                     self.label_show_name_adjust(random_choice)
                     time.sleep(self.time_span)
                 else:
+                    random_choice = function_random(list(result))
+                    self.label_show_name_var.set(random_choice)
+                    self.label_show_name_adjust(random_choice)
                     end_name = self.label_show_name_var.get()
                     result_text = self.qunyou_list[self.get_ready_gift_index] + " ----> " + str(end_name)
                     self.get_gift_list.popleft()
                     self.get_gift_list.append(end_name)
-                    self.result_gift_index += 1
+                    # print(self.ready_message_dict)
+                    self.ready_message_dict[end_name].append(self.STATE2)
+                    self.ready_message_dict[self.qunyou_temp[self.get_ready_gift_index]].pop(0)
                     self.qunyou_gift_remain -= 1
                     self.get_ready_gift_index += 1
+                    # print(self.ready_message_dict)
+                    self.ready_message_dict[self.qunyou_temp[self.get_ready_gift_index]].insert(0, self.STATE1)
+                    # print(self.ready_message_dict)
                     self.result_message_list[self.result_gift_index] = result_text
-                    self.result_message_var.set(self.get_result_message())
+                    self.get_gift_list.appendleft(self.qunyou_temp[self.get_ready_gift_index])
+                    print(self.get_ready_gift_index)
+                    self.result_gift_index += 1
                     self.gift_remain -= 1
+                    self.result_message_var.set(self.get_result_message())
                     self.remain_message_var.set(self.get_ready_message())
                     break
         elif mode == 'random':
-            temp = self.qunyou_list * 20
+            temp = self.qunyou_list * 15
             while True:
                 if self.running_flag:
                     # 这里可以外接借口调按概率 random
@@ -314,7 +334,6 @@ class App:
                         self.safufu_gift_remain -= 1
                     self.result_message_list[self.result_gift_index] = result_text
                     self.result_gift_index += 1
-                    print(self.result_message_list)
                     self.result_message_var.set(self.get_result_message())
                     self.gift_remain -= 1
                     break
