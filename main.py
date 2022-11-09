@@ -4,10 +4,7 @@ import time
 import random
 import openpyxl
 from tkinter import *
-from decimal import *
 from tkinter import ttk
-from get_random import function_random, get_pr
-from collections import deque
 
 
 class App:
@@ -19,13 +16,13 @@ class App:
         self.time_span = 0.03       # 名称显示间隔
         self.qunyou_list, self.tianxuan_count, self.last_year_safufu = self.get_people_list()   # 拿到群友名单
         self.qunyou_temp = self.qunyou_list + [" "]
-        self.gift_count = len(self.qunyou_list) + self.tianxuan_count + 1
-        self.gift_remain = self.gift_count
+        # self.gift_count = len(self.qunyou_list) + self.tianxuan_count + 1
+        # self.gift_remain = self.gift_count
         self.qunyou_gift_remain = len(self.qunyou_list)
         self.tianxuan_gift_remain = self.tianxuan_count
         self.safufu_gift_remain = 1
-        self.result_message_list = [""] * self.gift_count               # 这是结果消息显示列表
-        self.result_gift_index = 0                                      # 这是结果消息显示的 index
+        self.result_message_list = [""] * (len(self.qunyou_list) + self.tianxuan_count + 1)     # 这是结果消息显示列表
+        self.result_gift_index = 0                                                              # 这是结果消息显示的 index
         self.ready_message_dict = dict()
         for qunyou in self.qunyou_temp:
             self.ready_message_dict[qunyou] = [""]
@@ -46,6 +43,10 @@ class App:
         self.place_widget()         # 放置组件
         self.root.mainloop()
 
+    def function_random(self, people):
+        random.seed(time.time())
+        return random.choice(people)
+
     def get_people_list(self):
         workbook = openpyxl.load_workbook("./peopleList.xlsx", data_only=True)
         res = []
@@ -62,32 +63,6 @@ class App:
         else:
             extra_gift = 1
         return res, extra_gift, str(safufu)
-
-    # 删除了概率显示功能
-    # def get_pr(self, qunyou: list, without: str, is_avg: bool):
-    #     pr_result = []
-    #     n = len(qunyou)
-    #     # 抽 天选之人 的概率获取
-    #     if is_avg:
-    #         pr = (Decimal('1.0000') / Decimal(n)).quantize(Decimal('.0001'))
-    #         remain_pr = Decimal('1.0000')  # 概率修正
-    #         for i in range(n):
-    #             pr_result.append(pr)
-    #             remain_pr -= pr
-    #         pr_result.append(remain_pr)
-    #     # 礼物交换 和 Safufu 的概率获取
-    #     else:
-    #         without_index = qunyou.index(without)
-    #         pr = (Decimal('1.0000') / Decimal(n - 1)).quantize(Decimal('.0001'))
-    #         remain_pr = Decimal('1.0000')   # 概率修正
-    #         for i in range(n):
-    #             if i == without_index:
-    #                 pr_result.append(Decimal('0.0000'))
-    #             else:
-    #                 pr_result.append(pr)
-    #                 remain_pr -= pr
-    #         pr_result.append(remain_pr)
-    #     return pr_result
 
     def create_widget(self):
         # 名字显示组件 —— Label
@@ -145,10 +120,6 @@ class App:
                                       relief=SUNKEN,
                                       anchor='nw')
 
-        self.remain_pr_label_var = StringVar()
-        self.remain_pr_label_var.set("概率修正：0.00%")
-        self.remain_pr_label = ttk.Label(textvariable=self.remain_pr_label_var)
-
         # 目前抽取的礼物显示组件 —— Label
         self.remain_label_var = StringVar()
         self.remain_label = ttk.Label
@@ -178,7 +149,7 @@ class App:
         self.start_button.place(x=250, y=88, width=100, height=50)
         self.remain_message.place(x=75, y=150, width=200, height=250)
         self.result_message.place(x=375, y=150, width=175, height=350)
-        self.remain_pr_label.place(x=105, y=420, width=200, height=30)
+        # self.remain_pr_label.place(x=105, y=420, width=200, height=30)
 
     def start_button_awake(self):
         self.start_button.config(state=ACTIVE)
@@ -214,14 +185,29 @@ class App:
             self.start_button.config(text="开始")
 
     def create_new_window(self):
-        width = 250
-        height = 250
+        width = 215
+        height = 100
         left = (self.root.winfo_screenwidth() - width) / 2
         top = (self.root.winfo_screenheight() - height) / 2
-        new_window = Toplevel(self.root)
-        new_window.geometry("%dx%d+%d+%d" % (width, height, left, top))
-        new_window.resizable(0, 0)
-        new_window.title('没有惹')
+        self.new_window = Toplevel(self.root)
+        self.new_window.overrideredirect(1)
+        self.new_window.geometry("%dx%d+%d+%d" % (width, height, left, top))
+        self.new_window.resizable(0, 0)
+        label = Label(self.new_window,
+                      text="没有惹",
+                      font=('Arial', 20, 'bold'))
+        label.place(relx=0.35, rely=0.15)
+        button = Button(self.new_window,
+                        text="好耶",
+                        command=self.close_window)
+        button.place(relx=0.35, rely=0.5)
+
+    def close_window(self):
+        self.new_window.withdraw()
+        self.draw_type_random.config(state=ACTIVE)
+        self.draw_type_exchange.config(state=ACTIVE)
+        self.gift_type_tianxuan.config(state=ACTIVE)
+        self.gift_type_safufu.config(state=ACTIVE)
 
     def is_gift_empty(self):
         if self.qunyou_gift_remain == 0 and self.draw_type_button_var.get() == 1:
@@ -235,34 +221,10 @@ class App:
     def get_result_message(self):
         return "\n".join(self.result_message_list)
 
-    # 获取群友名单
-    # 根据当前抽奖方式设置概率显示
-    # 1. 交换礼物，eg:
-    # 十六's gift is ready to random.         -->         十六：10.14%
-    # 良辰：7.14%                             -->          良辰's gift is ready to random.
-    # 若云：7.14%                             -->          若云：（已获取）
-    #
-    # 取消概率展示，做全随机
-    # 概率展示和概率修正放在 Label 里
-    # 这里只做 正在抽取谁的礼物 + 谁抽到了礼物的展示
     def get_ready_message(self):
-        # 在这里拿概率数组
-        # temp = self.qunyou_list[:]
         if self.draw_type_button_var.get() == 1:
             if self.get_ready_gift_index == len(self.qunyou_list):
                 return "\n".join(self.qunyou_list + ["Finished."])
-            # gift_people = self.qunyou_list[self.get_ready_gift_index]
-            # self.get_gift_list.appendleft(gift_people)
-            # get_gift_list = self.get_gift_list
-            # length = len(set(self.get_gift_list))
-            # pr = get_pr(temp, get_gift_list, length)
-            # self.remain_pr_label_var.set("概率修正：%.4f" % pr['remain'])
-            # temp[self.get_ready_gift_index] = gift_people + '\'s gift is ready to random.'
-            # for i in range(len(temp)):
-            #     if i == self.get_ready_gift_index:
-            #         continue
-            #     else:
-            #         temp[i] = "{:^4s} ：{:5.2f}%".format(temp[i], pr[temp[i]] * 100)
             return "\n".join(i + "".join(j) for i, j in self.ready_message_dict.items())
         else:
             return "\n".join(self.qunyou_list)
@@ -272,55 +234,57 @@ class App:
             self.create_new_window()
             self.start_button.config(text="开始")
             self.start_button.config(state=DISABLED)
+            self.draw_type_random.config(state=DISABLED)
+            self.draw_type_exchange.config(state=DISABLED)
+            self.gift_type_tianxuan.config(state=DISABLED)
+            self.gift_type_safufu.config(state=DISABLED)
             return
 
         if mode == 'o2o':
             temp = self.qunyou_list * 15
             result = set(self.qunyou_list)
             result.difference_update(self.get_gift_list)
-            # print(result)
-            # print(self.get_gift_list)
             while True:
                 if self.running_flag:
-                    random_choice = function_random(temp)
+                    self.draw_type_random.config(state=DISABLED)
+                    random_choice = self.function_random(temp)
                     self.label_show_name_var.set(random_choice)
                     self.label_show_name_adjust(random_choice)
                     time.sleep(self.time_span)
                 else:
-                    random_choice = function_random(list(result))
+                    random_choice = self.function_random(list(result))
                     self.label_show_name_var.set(random_choice)
                     self.label_show_name_adjust(random_choice)
                     end_name = self.label_show_name_var.get()
                     result_text = self.qunyou_list[self.get_ready_gift_index] + " ----> " + str(end_name)
                     self.get_gift_list.popleft()
                     self.get_gift_list.append(end_name)
-                    # print(self.ready_message_dict)
                     self.ready_message_dict[end_name].append(self.STATE2)
                     self.ready_message_dict[self.qunyou_temp[self.get_ready_gift_index]].pop(0)
                     self.qunyou_gift_remain -= 1
                     self.get_ready_gift_index += 1
-                    # print(self.ready_message_dict)
                     self.ready_message_dict[self.qunyou_temp[self.get_ready_gift_index]].insert(0, self.STATE1)
-                    # print(self.ready_message_dict)
                     self.result_message_list[self.result_gift_index] = result_text
                     self.get_gift_list.appendleft(self.qunyou_temp[self.get_ready_gift_index])
-                    print(self.get_ready_gift_index)
                     self.result_gift_index += 1
-                    self.gift_remain -= 1
+                    # self.gift_remain -= 1
                     self.result_message_var.set(self.get_result_message())
                     self.remain_message_var.set(self.get_ready_message())
+                    self.draw_type_random.config(state=ACTIVE)
                     break
         elif mode == 'random':
             temp = self.qunyou_list * 15
             while True:
                 if self.running_flag:
-                    # 这里可以外接借口调按概率 random
-                    random_choice = function_random(temp)
+                    self.draw_type_exchange.config(state=DISABLED)
+                    self.gift_type_tianxuan.config(state=DISABLED)
+                    self.gift_type_safufu.config(state=DISABLED)
+                    random_choice = self.function_random(temp)
                     self.label_show_name_var.set(random_choice)
                     self.label_show_name_adjust(random_choice)
                     time.sleep(self.time_span)
                 else:
-                    random_choice = function_random(temp)
+                    random_choice = self.function_random(temp)
                     self.label_show_name_var.set(random_choice)
                     self.label_show_name_adjust(random_choice)
                     end_name = self.label_show_name_var.get()
@@ -330,12 +294,21 @@ class App:
                         result_text = "天选之人" + str(self.tianxuan_count - self.tianxuan_gift_remain + 1) + " ----> " + str(end_name)
                         self.tianxuan_gift_remain -= 1
                     elif gift_type == 2:
+                        result = set(self.qunyou_list)
+                        result.remove(self.last_year_safufu)
+                        random_choice = self.function_random(list(result))
+                        self.label_show_name_var.set(random_choice)
+                        self.label_show_name_adjust(random_choice)
+                        end_name = self.label_show_name_var.get()
                         result_text = "Safufu" + " ----> " + str(end_name)
                         self.safufu_gift_remain -= 1
                     self.result_message_list[self.result_gift_index] = result_text
                     self.result_gift_index += 1
                     self.result_message_var.set(self.get_result_message())
-                    self.gift_remain -= 1
+                    self.draw_type_exchange.config(state=ACTIVE)
+                    self.gift_type_tianxuan.config(state=ACTIVE)
+                    self.gift_type_safufu.config(state=ACTIVE)
+                    # self.gift_remain -= 1
                     break
 
     def thread_it(self, func, *args):
@@ -349,7 +322,55 @@ class App:
         else:
             self.label_show_name.place(x=220, y=20)
 
+class TipWindow:
+    def __init__(self):
+        self.window = Tk()
+        width = 215
+        height = 100
+        left = (self.window.winfo_screenwidth() - width) / 2
+        top = (self.window.winfo_screenheight() - height) / 2
+        self.window.geometry("%dx%d+%d+%d" % (width, height, left, top))
+        self.window.resizable(0, 0)
+        self.window.title("没有惹")
+        button = Button(self.window,
+                        text="好耶",
+                        command=self.close_window)
+        button.place(relx=0.35, rely=0.5)
+        self.window.mainloop()
+
+    def close_window(self):
+        self.window.destroy()
+
+
+
+class ErrorWindow:
+    def __init__(self):
+        self.window = Tk()
+        self.window.title('文件不存在')
+        width = 245
+        height = 100
+        left = (self.window.winfo_screenwidth() - width) / 2
+        top = (self.window.winfo_screenheight() - height) / 2
+        self.window.geometry("%dx%d+%d+%d" % (width, height, left, top))
+        self.window.resizable(0, 0)
+        label = Label(self.window,
+                      text="找不到文件 peopleList.xlsx",
+                      font=('Arial', 15, 'bold'))
+        label.place(relx=0.1, rely=0.15)
+        button = Button(self.window,
+                        text="关闭",
+                        command=self.close_window)
+        button.place(relx=0.35, rely=0.5)
+        self.window.mainloop()
+
+    def close_window(self):
+        self.window.destroy()
+
 
 if __name__ == '__main__':
-    app = App()
-
+    try:
+        f = open('./peopleList.xlsx')
+        f.close()
+        app = App()
+    except FileNotFoundError:
+        window = ErrorWindow()
