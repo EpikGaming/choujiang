@@ -16,8 +16,12 @@ class App:
         self.time_span = 0.03       # 名称显示间隔
         self.qunyou_list, self.tianxuan_count, self.last_year_safufu = self.get_people_list()   # 拿到群友名单
         self.qunyou_temp = self.qunyou_list + [" "]
-        # self.gift_count = len(self.qunyou_list) + self.tianxuan_count + 1
-        # self.gift_remain = self.gift_count
+        self.safufu_temp = []
+        for qunyou in self.qunyou_list:
+            if qunyou == self.last_year_safufu:
+                self.safufu_temp.append(self.last_year_safufu + "Safufu")
+            else:
+                self.safufu_temp.append(qunyou)
         self.qunyou_gift_remain = len(self.qunyou_list)
         self.tianxuan_gift_remain = self.tianxuan_count
         self.safufu_gift_remain = 1
@@ -153,6 +157,7 @@ class App:
 
     def start_button_awake(self):
         self.start_button.config(state=ACTIVE)
+        self.remain_message_var.set(self.get_ready_message())
 
     # 根据抽奖方式选择是否隐藏奖品种类
     def hidden_or_show_gift_type(self):
@@ -227,6 +232,8 @@ class App:
                 return "\n".join(self.qunyou_list + ["Finished."])
             return "\n".join(i + "".join(j) for i, j in self.ready_message_dict.items())
         else:
+            if self.gift_type_button_var.get() == 2:
+                return "\n".join(self.safufu_temp)
             return "\n".join(self.qunyou_list)
 
     def start_draw(self, mode: str):
