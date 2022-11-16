@@ -16,8 +16,12 @@ class App:
         self.time_span = 0.03       # 名称显示间隔
         self.qunyou_list, self.tianxuan_count, self.last_year_safufu = self.get_people_list()   # 拿到群友名单
         self.qunyou_temp = self.qunyou_list + [" "]
-        # self.gift_count = len(self.qunyou_list) + self.tianxuan_count + 1
-        # self.gift_remain = self.gift_count
+        self.safufu_temp = []
+        for qunyou in self.qunyou_list:
+            if qunyou == self.last_year_safufu:
+                self.safufu_temp.append(self.last_year_safufu + " Safufu")
+            else:
+                self.safufu_temp.append(qunyou)
         self.qunyou_gift_remain = len(self.qunyou_list)
         self.tianxuan_gift_remain = self.tianxuan_count
         self.safufu_gift_remain = 1
@@ -48,7 +52,7 @@ class App:
         return random.choice(people)
 
     def get_people_list(self):
-        workbook = openpyxl.load_workbook("./peopleList.xlsx", data_only=True)
+        workbook = openpyxl.load_workbook("./qunyou.xlsx", data_only=True)
         res = []
         sheet = workbook[workbook.sheetnames[0]]
         for row in range(2, sheet.max_row + 1):
@@ -69,7 +73,7 @@ class App:
         self.label_show_name_var = StringVar()
         self.label_show_name = ttk.Label(self.root,
                                          textvariable=self.label_show_name_var,
-                                         font=('Arial', 50, 'bold'))
+                                         font=('Times', 45, 'bold'))
 
         # 开始按钮组件 —— Button
         self.start_button = ttk.Button(self.root,
@@ -118,7 +122,8 @@ class App:
         self.remain_message = Message(textvariable=self.remain_message_var,
                                       bg='#ffffff',
                                       relief=SUNKEN,
-                                      anchor='nw')
+                                      anchor='nw',
+                                      font=("等线", 12))
 
         # 目前抽取的礼物显示组件 —— Label
         self.remain_label_var = StringVar()
@@ -130,7 +135,8 @@ class App:
                                       bg='#ffffff',
                                       relief=SUNKEN,
                                       anchor='nw',
-                                      justify=LEFT)
+                                      justify=LEFT,
+                                      font=("等线", 12))
 
     def set_widget(self):
         default_name_ = '致远星'
@@ -140,19 +146,20 @@ class App:
         self.remain_message_var.set(self.get_ready_message())
 
     def place_widget(self):
-        self.label_show_type_label.place(x=30, y=80, width=200, height=50)
+        self.label_show_type_label.place(x=55, y=80, width=200, height=50)
         self.draw_type_exchange.place(x=15, y=0)
         self.draw_type_random.place(x=105, y=0)
         self.label_show_gift_label.place(x=370, y=80, width=200, height=50)
         self.gift_type_tianxuan.place(x=15, y=0)
         self.gift_type_safufu.place(x=105, y=0)
-        self.start_button.place(x=250, y=88, width=100, height=50)
-        self.remain_message.place(x=75, y=150, width=200, height=250)
-        self.result_message.place(x=375, y=150, width=175, height=350)
+        self.start_button.place(x=262, y=90, width=100, height=40)
+        self.remain_message.place(x=55, y=150, width=255, height=300)
+        self.result_message.place(x=370, y=150, width=200, height=350)
         # self.remain_pr_label.place(x=105, y=420, width=200, height=30)
 
     def start_button_awake(self):
         self.start_button.config(state=ACTIVE)
+        self.remain_message_var.set(self.get_ready_message())
 
     # 根据抽奖方式选择是否隐藏奖品种类
     def hidden_or_show_gift_type(self):
@@ -185,22 +192,24 @@ class App:
             self.start_button.config(text="开始")
 
     def create_new_window(self):
-        width = 215
+        width = 250
         height = 100
-        left = (self.root.winfo_screenwidth() - width) / 2
-        top = (self.root.winfo_screenheight() - height) / 2
         self.new_window = Toplevel(self.root)
         self.new_window.overrideredirect(1)
+        left = 660
+        top = 400
         self.new_window.geometry("%dx%d+%d+%d" % (width, height, left, top))
         self.new_window.resizable(0, 0)
         label = Label(self.new_window,
                       text="没有惹",
-                      font=('Arial', 20, 'bold'))
+                      font=('等线', 20, 'bold'))
         label.place(relx=0.35, rely=0.15)
         button = Button(self.new_window,
                         text="好耶",
-                        command=self.close_window)
-        button.place(relx=0.35, rely=0.5)
+                        font=('黑体', 15, 'overstrike'),
+                        command=self.close_window,
+                        width=10)
+        button.place(relx=0.3, rely=0.5)
 
     def close_window(self):
         self.new_window.withdraw()
@@ -227,6 +236,8 @@ class App:
                 return "\n".join(self.qunyou_list + ["Finished."])
             return "\n".join(i + "".join(j) for i, j in self.ready_message_dict.items())
         else:
+            if self.gift_type_button_var.get() == 2:
+                return "\n".join(self.safufu_temp)
             return "\n".join(self.qunyou_list)
 
     def start_draw(self, mode: str):
@@ -318,9 +329,9 @@ class App:
 
     def label_show_name_adjust(self, name: str):
         if len(name) == 2:
-            self.label_show_name.place(x=245, y=20)
+            self.label_show_name.place(x=245, y=18)
         else:
-            self.label_show_name.place(x=220, y=20)
+            self.label_show_name.place(x=220, y=18)
 
 class TipWindow:
     def __init__(self):
@@ -347,20 +358,22 @@ class ErrorWindow:
     def __init__(self):
         self.window = Tk()
         self.window.title('文件不存在')
-        width = 245
+        width = 300
         height = 100
         left = (self.window.winfo_screenwidth() - width) / 2
         top = (self.window.winfo_screenheight() - height) / 2
         self.window.geometry("%dx%d+%d+%d" % (width, height, left, top))
         self.window.resizable(0, 0)
         label = Label(self.window,
-                      text="找不到文件 peopleList.xlsx",
-                      font=('Arial', 15, 'bold'))
-        label.place(relx=0.1, rely=0.15)
+                      text="找不到文件 qunyou.xlsx",
+                      font=('等线', 15, 'bold'))
+        label.place(relx=0.12, rely=0.15)
         button = Button(self.window,
                         text="关闭",
-                        command=self.close_window)
-        button.place(relx=0.35, rely=0.5)
+                        font=('黑体', 15, 'underline'),
+                        command=self.close_window,
+                        width=15)
+        button.place(relx=0.22, rely=0.5)
         self.window.mainloop()
 
     def close_window(self):
@@ -369,7 +382,7 @@ class ErrorWindow:
 
 if __name__ == '__main__':
     try:
-        f = open('./peopleList.xlsx')
+        f = open('./qunyou.xlsx')
         f.close()
         app = App()
     except FileNotFoundError:
